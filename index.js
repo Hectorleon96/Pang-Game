@@ -1,4 +1,4 @@
-const GRAVITY = 0.1;
+const GRAVITY = 0.2;
 const BUBBLE_RATIO = 30;
 const GROUND_HEIGHT = 70;
 const CONTROLS_HEIGHT = 70;
@@ -75,7 +75,7 @@ function updatePhysics(bubble) {
   bubble.vy += GRAVITY;
 
   if (bubble.y + bubble.vy + BUBBLE_RATIO >= groundY) {
-    bubble.vy = -11;
+    bubble.vy = -15;
   }
   if (bubble.y + bubble.vy - BUBBLE_RATIO < CONTROLS_HEIGHT) {
     bubble.vy = 1;
