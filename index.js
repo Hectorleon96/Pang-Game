@@ -1,39 +1,41 @@
+const container = document.getElementById("container");
+const containerRect = container.getBoundingClientRect();
+
 const playBtn = document.getElementById("play");
-
-let animationFrameId = undefined;
-
-const GRAVITY = 0.17;
-const BUBBLE_RATIO = 25;
-const GROUND_HEIGHT = 25;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const rect = canvas.getBoundingClientRect();
-canvas.width = rect.width;
-canvas.height = rect.height;
+canvas.width = containerRect.width;
+canvas.height = containerRect.height;
+
+const GRAVITY = 0.1;
+const BUBBLE_RATIO = 30;
+const GROUND_HEIGHT = 50;
+const CONTROLS_HEIGHT = 70;
 
 const groundY = canvas.height - GROUND_HEIGHT;
 
-const levelBubblesLength = { 0: 3 };
-const INIT_IN_LEVEL = 0;
+let animationFrameId = undefined;
 
 const bubbleData = [];
+const levelBubblesLength = { 0: 3 };
+const INIT_IN_LEVEL = 0;
 
 for (let i = 0; i < levelBubblesLength[INIT_IN_LEVEL] ?? 1; i++) {
   const randomX =
     Math.random() * (canvas.width - BUBBLE_RATIO - BUBBLE_RATIO) + BUBBLE_RATIO;
-
-  const randomY = 0 + BUBBLE_RATIO * 2;
-
+  const y = 0 + CONTROLS_HEIGHT + BUBBLE_RATIO * 2;
   const randomVx = (1.5 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
   const randomVy = Math.random() * (1.5 + 1) - 1;
+
   bubbleData.push({
     x: randomX,
-    y: randomY,
+    y,
     vx: randomVx,
     vy: randomVy,
     gravity: GRAVITY,
+    color: "#f5f5f5",
   });
 }
 
@@ -41,7 +43,10 @@ function updatePhysics(bubble) {
   bubble.vy += GRAVITY;
 
   if (bubble.y + bubble.vy + BUBBLE_RATIO >= groundY) {
-    bubble.vy = -8;
+    bubble.vy = -11;
+  }
+  if (bubble.y + bubble.vy - BUBBLE_RATIO < CONTROLS_HEIGHT) {
+    bubble.vy = 1;
   }
   if (
     bubble.x + bubble.vx + BUBBLE_RATIO >= canvas.width ||
@@ -81,12 +86,14 @@ function moveBubble() {
 
         const aNormalV = a.vx * normalX + a.vy * normalY;
         const bNormalV = b.vx * normalX + b.vy * normalY;
+
         const impactForce = aNormalV - bNormalV;
         const impactVx = impactForce * normalX;
         const impactVy = impactForce * normalY;
 
-        const separationX = ((BUBBLE_RATIO * 2 - squareRoot) / 2) * normalX;
-        const separationY = ((BUBBLE_RATIO * 2 - squareRoot) / 2) * normalY;
+        const overlap = BUBBLE_RATIO * 2 - squareRoot;
+        const separationX = (overlap / 2) * normalX;
+        const separationY = (overlap / 2) * normalY;
 
         a.x += separationX;
         a.y += separationY;
@@ -101,31 +108,34 @@ function moveBubble() {
     }
   }
 
-  for (let i = 0; i < bubbleData.length; i++) {
-    const bubble = bubbleData[i];
-    drawBubble(bubble.x, bubble.y);
-  }
-
+  drawBubbles();
   animationFrameId = requestAnimationFrame(moveBubble);
 }
 
+function drawBubbles() {
+  for (let i = 0; i < bubbleData.length; i++) {
+    const bubble = bubbleData[i];
+    drawBubble(bubble.x, bubble.y, bubble.color);
+  }
+}
+
 function drawState() {
-  ctx.fillStyle = "#f4f4f4";
+  ctx.fillStyle = "#333";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.beginPath();
   ctx.moveTo(0, groundY);
   ctx.lineTo(canvas.width, groundY);
 
-  ctx.strokeStyle = "#333333";
+  ctx.strokeStyle = "#f5f5f5";
   ctx.lineWidth = 4;
   ctx.stroke();
 }
 
-function drawBubble(x, y) {
+function drawBubble(x, y, color) {
   ctx.beginPath();
   ctx.arc(x, y, BUBBLE_RATIO, 0, Math.PI * 2);
-  ctx.fillStyle = "#800000";
+  ctx.fillStyle = color;
   ctx.fill();
 }
 
@@ -157,5 +167,20 @@ window.addEventListener("keydown", (event) => {
     togglePlay();
   }
 });
+
+const observer = new ResizeObserver((entries) => {
+  for (const entrie of entries) {
+    const width = entrie.contentRect.width;
+    const height = entrie.contentRect.height;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    drawState();
+    drawBubbles();
+  }
+});
+
+observer.observe(container);
 
 animationFrameId = requestAnimationFrame(moveBubble);
