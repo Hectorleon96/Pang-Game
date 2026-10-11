@@ -2,6 +2,9 @@ const container = document.getElementById("container");
 const containerRect = container.getBoundingClientRect();
 
 const playBtn = document.getElementById("play");
+const numBubbles = document.getElementById("num-bubbles");
+const numBubblesText = document.getElementById("num-bubbles-text");
+const DEFAULT_BUBBLES_QUANTITY = Number(numBubbles.value);
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -19,24 +22,36 @@ const groundY = canvas.height - GROUND_HEIGHT;
 let animationFrameId = undefined;
 
 const bubbleData = [];
-const levelBubblesLength = { 0: 3 };
+const levelBubblesLength = { 0: DEFAULT_BUBBLES_QUANTITY };
 const INIT_IN_LEVEL = 0;
 
-for (let i = 0; i < levelBubblesLength[INIT_IN_LEVEL] ?? 1; i++) {
+for (
+  let i = 0;
+  i < levelBubblesLength[INIT_IN_LEVEL] ?? DEFAULT_BUBBLES_QUANTITY;
+  i++
+) {
+  const bubble = newBubble();
+  appendBubble(bubble);
+}
+
+function newBubble() {
   const randomX =
     Math.random() * (canvas.width - BUBBLE_RATIO - BUBBLE_RATIO) + BUBBLE_RATIO;
   const y = 0 + CONTROLS_HEIGHT + BUBBLE_RATIO * 2;
   const randomVx = (1.5 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
   const randomVy = Math.random() * (1.5 + 1) - 1;
-
-  bubbleData.push({
+  return {
     x: randomX,
     y,
     vx: randomVx,
     vy: randomVy,
     gravity: GRAVITY,
     color: "#f5f5f5",
-  });
+  };
+}
+
+function appendBubble(bubble) {
+  bubbleData.push(bubble);
 }
 
 function updatePhysics(bubble) {
@@ -161,26 +176,27 @@ function pause() {
 
 playBtn.addEventListener("click", togglePlay);
 
+numBubbles.addEventListener("change", (event) => {
+  const value = Number(event.target.value);
+
+  if (value < bubbleData.length) {
+    bubbleData.splice(value, bubbleData.length - value);
+  } else {
+    const bubblesToAdd = value - bubbleData.length;
+    for (let i = 0; i < bubblesToAdd; i++) {
+      const bubble = newBubble();
+      appendBubble(bubble);
+    }
+  }
+
+  numBubblesText.textContent = ` (${value})`;
+});
+
 window.addEventListener("keydown", (event) => {
   if (event.key == " " || event.code == "Space") {
     event.preventDefault();
     togglePlay();
   }
 });
-
-const observer = new ResizeObserver((entries) => {
-  for (const entrie of entries) {
-    const width = entrie.contentRect.width;
-    const height = entrie.contentRect.height;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    drawState();
-    drawBubbles();
-  }
-});
-
-observer.observe(container);
 
 animationFrameId = requestAnimationFrame(moveBubble);
