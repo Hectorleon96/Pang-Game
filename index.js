@@ -1,3 +1,28 @@
+const GRAVITY = 0.1;
+const BUBBLE_RATIO = 30;
+const GROUND_HEIGHT = 70;
+const CONTROLS_HEIGHT = 70;
+
+const COLORS = {
+  1: "#a3c1ad",
+  2: "#4a3c31",
+  3: "#d2691e",
+  4: "#708090",
+  5: "#fff8dc",
+  6: "#2e8b57",
+  7: "#e6e6fa",
+  8: "#8b0000",
+  9: "#b8860b",
+  10: "#556b2f",
+  11: "#da70d6",
+  12: "#20b2aa",
+  13: "#bc8f8f",
+  14: "#4b0082",
+  15: "#cd853f",
+};
+
+const COLORS_KEYS_LENGTH = Object.keys(COLORS).length;
+
 const container = document.getElementById("container");
 const containerRect = container.getBoundingClientRect();
 
@@ -11,11 +36,6 @@ const ctx = canvas.getContext("2d");
 
 canvas.width = containerRect.width;
 canvas.height = containerRect.height;
-
-const GRAVITY = 0.1;
-const BUBBLE_RATIO = 30;
-const GROUND_HEIGHT = 50;
-const CONTROLS_HEIGHT = 70;
 
 const groundY = canvas.height - GROUND_HEIGHT;
 
@@ -31,27 +51,24 @@ for (
   i++
 ) {
   const bubble = newBubble();
-  appendBubble(bubble);
+  bubbleData.push(bubble);
+}
+
+function randomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS_KEYS_LENGTH) + 1];
 }
 
 function newBubble() {
-  const randomX =
-    Math.random() * (canvas.width - BUBBLE_RATIO - BUBBLE_RATIO) + BUBBLE_RATIO;
-  const y = 0 + CONTROLS_HEIGHT + BUBBLE_RATIO * 2;
-  const randomVx = (1.5 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
-  const randomVy = Math.random() * (1.5 + 1) - 1;
   return {
-    x: randomX,
-    y,
-    vx: randomVx,
-    vy: randomVy,
+    x:
+      Math.random() * (canvas.width - BUBBLE_RATIO - BUBBLE_RATIO) +
+      BUBBLE_RATIO,
+    y: 0 + CONTROLS_HEIGHT + BUBBLE_RATIO * 2,
+    vx: (1.5 + Math.random()) * (Math.random() < 0.5 ? 1 : -1),
+    vy: Math.random() * (1.5 + 1) - 1,
     gravity: GRAVITY,
-    color: "#f5f5f5",
+    color: randomColor(),
   };
-}
-
-function appendBubble(bubble) {
-  bubbleData.push(bubble);
 }
 
 function updatePhysics(bubble) {
@@ -114,11 +131,13 @@ function moveBubble() {
         a.y += separationY;
         a.vx -= impactVx;
         a.vy -= impactVy;
+        a.color = randomColor();
 
         b.x -= separationX;
         b.y -= separationY;
         b.vx += impactVx;
         b.vy += impactVy;
+        b.color = randomColor();
       }
     }
   }
@@ -137,11 +156,9 @@ function drawBubbles() {
 function drawState() {
   ctx.fillStyle = "#333";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.beginPath();
   ctx.moveTo(0, groundY);
   ctx.lineTo(canvas.width, groundY);
-
   ctx.strokeStyle = "#f5f5f5";
   ctx.lineWidth = 4;
   ctx.stroke();
@@ -185,7 +202,7 @@ numBubbles.addEventListener("change", (event) => {
     const bubblesToAdd = value - bubbleData.length;
     for (let i = 0; i < bubblesToAdd; i++) {
       const bubble = newBubble();
-      appendBubble(bubble);
+      bubbleData.push(bubble);
     }
   }
 
@@ -198,5 +215,15 @@ window.addEventListener("keydown", (event) => {
     togglePlay();
   }
 });
+
+const observer = new ResizeObserver((entries) => {
+  for (const entrie of entries) {
+    canvas.width = entrie.contentRect.width;
+    canvas.height = entrie.contentRect.height;
+    drawState();
+    drawBubbles();
+  }
+});
+observer.observe(container);
 
 animationFrameId = requestAnimationFrame(moveBubble);
