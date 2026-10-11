@@ -13,9 +13,9 @@ const rect = canvas.getBoundingClientRect();
 canvas.width = rect.width;
 canvas.height = rect.height;
 
-const sueloY = canvas.height - GROUND_HEIGHT;
+const groundY = canvas.height - GROUND_HEIGHT;
 
-const levelBubblesLength = { 0: 2 };
+const levelBubblesLength = { 0: 3 };
 const INIT_IN_LEVEL = 0;
 
 const bubbleData = [];
@@ -23,10 +23,8 @@ const bubbleData = [];
 for (let i = 0; i < levelBubblesLength[INIT_IN_LEVEL] ?? 1; i++) {
   const randomX =
     Math.random() * (canvas.width - BUBBLE_RATIO - BUBBLE_RATIO) + BUBBLE_RATIO;
-  const randomY =
-    Math.random() * (canvas.height - BUBBLE_RATIO) -
-    BUBBLE_RATIO +
-    canvas.height / 3;
+
+  const randomY = 0 + BUBBLE_RATIO * 2;
 
   const randomVx = (1.5 + Math.random()) * (Math.random() < 0.5 ? 1 : -1);
   const randomVy = Math.random() * (1.5 + 1) - 1;
@@ -42,14 +40,14 @@ for (let i = 0; i < levelBubblesLength[INIT_IN_LEVEL] ?? 1; i++) {
 function updatePhysics(bubble) {
   bubble.vy += GRAVITY;
 
-  if (bubble.y + bubble.vy + BUBBLE_RATIO >= sueloY) {
+  if (bubble.y + bubble.vy + BUBBLE_RATIO >= groundY) {
     bubble.vy = -8;
   }
   if (
     bubble.x + bubble.vx + BUBBLE_RATIO >= canvas.width ||
     bubble.x - BUBBLE_RATIO <= 0
   ) {
-    bubble.vx *= -1; // new_velocity = velocity * -1
+    bubble.vx *= -1;
   }
 
   bubble.y += bubble.vy;
@@ -70,15 +68,35 @@ function moveBubble() {
     for (let j = i + 1; j < bubbleData.length; j++) {
       const b = bubbleData[j];
 
-      const dX = a.x - b.x;
-      const dY = a.y - b.y;
-      const xSquare = dX ** 2;
-      const ySquare = dY ** 2;
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const xSquare = dx ** 2;
+      const ySquare = dy ** 2;
       const c = xSquare + ySquare;
       const squareRoot = Math.sqrt(c);
 
       if (squareRoot <= BUBBLE_RATIO * 2) {
-        console.log(`Bubbles ${i} and ${j} are touched`);
+        const normalX = dx / squareRoot;
+        const normalY = dy / squareRoot;
+
+        const aNormalV = a.vx * normalX + a.vy * normalY;
+        const bNormalV = b.vx * normalX + b.vy * normalY;
+        const impactForce = aNormalV - bNormalV;
+        const impactVx = impactForce * normalX;
+        const impactVy = impactForce * normalY;
+
+        const separationX = ((BUBBLE_RATIO * 2 - squareRoot) / 2) * normalX;
+        const separationY = ((BUBBLE_RATIO * 2 - squareRoot) / 2) * normalY;
+
+        a.x += separationX;
+        a.y += separationY;
+        a.vx -= impactVx;
+        a.vy -= impactVy;
+
+        b.x -= separationX;
+        b.y -= separationY;
+        b.vx += impactVx;
+        b.vy += impactVy;
       }
     }
   }
@@ -96,8 +114,8 @@ function drawState() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.beginPath();
-  ctx.moveTo(0, sueloY);
-  ctx.lineTo(canvas.width, sueloY);
+  ctx.moveTo(0, groundY);
+  ctx.lineTo(canvas.width, groundY);
 
   ctx.strokeStyle = "#333333";
   ctx.lineWidth = 4;
@@ -134,9 +152,8 @@ function pause() {
 playBtn.addEventListener("click", togglePlay);
 
 window.addEventListener("keydown", (event) => {
-  event.preventDefault();
-
   if (event.key == " " || event.code == "Space") {
+    event.preventDefault();
     togglePlay();
   }
 });
