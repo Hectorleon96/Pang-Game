@@ -1,3 +1,3 @@
-# CLASSIC PANG GAME
+# BOUNCING BUBBLES
 
-Still in progress...
+A 2D bubble collision simulation built with vanilla JavaScript and HTML Canvas, featuring gravity, bouncing, and interactive controls.
